@@ -1,15 +1,16 @@
-import React from 'react';
-import PropTypes from 'prop-types';
-import { Image, ImageBackground, ActivityIndicator, View } from 'react-native';
+import React from "react";
+import PropTypes from "prop-types";
+import { Image, ImageBackground, ActivityIndicator, View } from "react-native";
 
 class ImageLoad extends React.Component {
   static propTypes = {
     isShowActivity: PropTypes.bool,
+    componentRender: PropTypes.func
   };
 
   static defaultProps = {
-    isShowActivity: true,
-	};
+    isShowActivity: true
+  };
 
   constructor(props) {
     super(props);
@@ -19,96 +20,129 @@ class ImageLoad extends React.Component {
     };
   }
 
-  onLoadEnd(){
+  onLoadEnd() {
     this.setState({
       isLoaded: true
     });
   }
 
-  onError(){
+  onError() {
     this.setState({
       isError: true
     });
   }
 
-  render() {
+  activityComponent() {
     const {
-      style, source, resizeMode, borderRadius, backgroundColor, children,
-      loadingStyle, placeholderSource, placeholderStyle,
+      borderRadius,
+      backgroundColor,
+      loadingStyle,
+      placeholderSource,
+      placeholderStyle,
       customImagePlaceholderDefaultStyle
     } = this.props;
-    return(
-      <ImageBackground
-        onLoadEnd={this.onLoadEnd.bind(this)}
-        onError={this.onError.bind(this)}
-        style={[styles.backgroundImage, style]}
-        source={source}
-        resizeMode={resizeMode}
-        borderRadius={borderRadius}
+    return (
+      <View
+        style={[
+          styles.viewImageStyles,
+          { borderRadius: borderRadius },
+          backgroundColor ? { backgroundColor: backgroundColor } : {}
+        ]}
       >
-        {
-          (this.state.isLoaded && !this.state.isError) ? children :
-          <View 
-            style={[styles.viewImageStyles, { borderRadius: borderRadius }, backgroundColor ? { backgroundColor: backgroundColor } : {}]}
-          >
-            {
-              (this.props.isShowActivity && !this.state.isError) &&
-              <ActivityIndicator
-                style={styles.activityIndicator}
-                size={loadingStyle ? loadingStyle.size : 'small'}
-                color={loadingStyle ? loadingStyle.color : 'gray'}
-              />
-            }
-            <Image
-              style={placeholderStyle ? placeholderStyle : [styles.imagePlaceholderStyles, customImagePlaceholderDefaultStyle]}
-              source={placeholderSource ? placeholderSource : require('./Images/empty-image.png')}
-            >
-            </Image>
-          </View>
-        }
-        {
-          this.props.children &&
-          <View style={styles.viewChildrenStyles}>
-          {
-            this.props.children
+        {this.props.isShowActivity && !this.state.isError && (
+          <ActivityIndicator
+            style={styles.activityIndicator}
+            size={loadingStyle ? loadingStyle.size : "small"}
+            color={loadingStyle ? loadingStyle.color : "gray"}
+          />
+        )}
+        <Image
+          style={
+            placeholderStyle
+              ? placeholderStyle
+              : [
+                  styles.imagePlaceholderStyles,
+                  customImagePlaceholderDefaultStyle
+                ]
           }
-          </View>
-        }
-      </ImageBackground>
+          source={
+            placeholderSource
+              ? placeholderSource
+              : require("./Images/empty-image.png")
+          }
+        />
+      </View>
     );
+  }
+
+  childrenComponent() {
+    if (this.props.children) {
+      return (
+        <View style={styles.viewChildrenStyles}>{this.props.children}</View>
+      );
+    }
+  }
+
+  contentComponent() {
+    if (this.state.isLoaded && !this.state.isError) {
+      return [this.props.children, this.childrenComponent()];
+    } else {
+      return [this.activityComponent(), this.childrenComponent()];
+    }
+  }
+
+  render() {
+    const { componentRender } = this.props;
+    const renderProps = {
+      onLoadEnd: this.onLoadEnd.bind(this),
+      onError: this.onError.bind(this),
+      style: [styles.backgroundImage, this.props.style],
+      source: this.props.source,
+      resizeMode: this.props.resizeMode,
+      borderRadius: this.props.borderRadius
+    };
+    if (componentRender) {
+      return componentRender(renderProps, this.contentComponent());
+    } else {
+      return (
+        <ImageBackground {...renderProps}>
+          {this.contentComponent()}
+        </ImageBackground>
+      );
+    }
   }
 }
 
 const styles = {
   backgroundImage: {
-    position: 'relative',
+    position: "relative"
   },
   activityIndicator: {
-    position: 'absolute',
-    margin: 'auto',
-    zIndex: 9,
+    position: "absolute",
+    margin: "auto",
+    zIndex: 9
   },
   viewImageStyles: {
     flex: 1,
-    backgroundColor: '#e9eef1',
-    justifyContent: 'center',
-    alignItems: 'center'
+    backgroundColor: "#e9eef1",
+    justifyContent: "center",
+    alignItems: "center"
   },
   imagePlaceholderStyles: {
     width: 100,
     height: 100,
-    resizeMode: 'contain',
-    justifyContent: 'center',
-    alignItems: 'center'
+    resizeMode: "contain",
+    justifyContent: "center",
+    alignItems: "center"
   },
   viewChildrenStyles: {
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    position: 'absolute',
-    backgroundColor: 'transparent'
+    position: "absolute",
+    backgroundColor: "transparent"
   }
-}
+};
 
 export default ImageLoad;
